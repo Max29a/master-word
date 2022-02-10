@@ -21,16 +21,37 @@ const GameBody = () => {
         } else {
           let countRightLetter = 0;
           let countRightPosition = 0;
-          let correctLetters = new Set();
-          currentGuess.forEach(letter => correctLetters.add(letter));
-          for (let i = 0; i < currentGuess.length; i++) {
-            const curLetter = solution.charAt(i);
-            if (curLetter === currentGuess[i]) {
-              countRightPosition++;
-              correctLetters.delete(curLetter);
+          let correctLetters = {};
+          let guessCopy = [...currentGuess];
+          for (let i = 0; i < solution.length; i++) {
+            const letter = solution.charAt(i);           
+            if (correctLetters.hasOwnProperty(letter)) {
+              correctLetters[letter] = correctLetters[letter] + 1;
             } else {
-              if (correctLetters.has(curLetter)) {
-                countRightLetter++;
+              correctLetters[letter] = 1;
+            }
+          }
+          for (let i = currentGuess.length-1; i >= 0; i--) {
+            const solutionLetter = solution.charAt(i);
+            const curLetter = currentGuess[i];
+            if (solutionLetter === curLetter) {
+              countRightPosition++;
+              guessCopy.splice(i, 1);
+              if (correctLetters.hasOwnProperty(curLetter)) {
+                correctLetters[curLetter] = correctLetters[curLetter] - 1;
+                if (correctLetters[curLetter] == 0) {
+                  delete correctLetters[curLetter];
+                }
+              }
+            }
+          }
+          for (let i = 0; i < guessCopy.length; i++) {
+            const curLetter = guessCopy[i];
+            if (correctLetters.hasOwnProperty(curLetter)) {
+              countRightLetter++;
+              correctLetters[curLetter] = correctLetters[curLetter] - 1;
+              if (correctLetters[curLetter] == 0) {
+                delete correctLetters[curLetter];
               }
             }
           }
