@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import React from 'react';
 import { useState } from 'react';
-import { solutions } from '../solutions';
+import { solutions, validGuesses } from '../solutions';
 import useKeypress from 'react-use-keypress';
 
 const GameBody = () => {
@@ -11,12 +11,22 @@ const GameBody = () => {
   const [previousRowResults, setPreviousRowResults] = useState([]);
   const [currentGuess, setCurrentGuess] = useState([]);
   const [win, setWin] = useState(false);
+  const [status, setStatus] = useState('Playing game #1');
+  const [hasError, setHasError] = useState(false);
 
   const handleKey = (event) => {
     if (event.key === "Enter") {
       if (currentGuess.length === 5) {
-        if (currentGuess.join('') === solution) {
+        const curGuess = currentGuess.join('');
+        if (!solutions.includes(curGuess) && !validGuesses.includes(curGuess)) {
+          setStatus('Not a valid word to guess');
+          setHasError(true);
+          return;
+        }
+
+        if (curGuess === solution) {
           setPreviousRowResults([...previousRowResults, [5,0]]);
+          setStatus(`You won game ${currentSolutionIndex+1}`);
           setWin(true);
         } else {
           let countRightLetter = 0;
@@ -63,6 +73,8 @@ const GameBody = () => {
       }
     } else if (event.key === "Backspace") {
       if (currentGuess.length > 0) {
+        setHasError(false);
+        setStatus('');
         const newCur = currentGuess.slice(0,-1);
         setCurrentGuess(newCur);
       }
@@ -85,18 +97,39 @@ const GameBody = () => {
     setPreviousRows([]);
     setPreviousRowResults([]);
     setCurrentGuess([]);
+    setStatus(`Playing game #${newIndex+1}`);
     setWin(false);
+  }
+
+  const goBack = () => {
+    const newIndex = currentSolutionIndex - 1;
+    setCurrentSolutionIndex(newIndex);
+    setSolution(solutions[newIndex]);
+    setPreviousRows([]);
+    setPreviousRowResults([]);
+    setCurrentGuess([]);
+    setStatus(`Playing game #${newIndex+1}`);
+    setWin(false);
+  }
+
+  const getPointer = () => {
+    if (hasError) {
+      return <RedArrow>{'->'}</RedArrow>
+    } else {
+      return '->';
+    }
   }
 
   return (
     <Board>
       <p>Instructions: type your letters, press enter to guess. First number is correct letters in place, second number is correct letters wrong place.</p>
-      Game# {currentSolutionIndex+1}
+      <StatusRow>Status: <textarea className='content' rows={1} value={status} disabled={true}></textarea></StatusRow>
+      <div><button onClick={goBack} disabled={currentSolutionIndex < 1}>{'<-'} back</button> Game# {currentSolutionIndex+1} <button onClick={goNext} disabled={currentSolutionIndex === solutions.length-1}>next {'->'}</button></div>
       {previousRows.map((row, index) => {
         return (
           <Row key={index}>{index+1}:{'   '}
             {row.map((char, index2) => {
-              return <span key={index2}>{char}</span>
+              return <span key={index2} className="guess-letter">{char}</span>
             })}
             <span>
               {'    '}{previousRowResults[index][0]}{' '}{previousRowResults[index][1]}
@@ -106,8 +139,8 @@ const GameBody = () => {
       })}
       {!win && (
         <Row>
-          {'-> '} {currentGuess.map((guess, index) => {
-            return <span key={index}>{guess}</span>
+          {getPointer()} {currentGuess.map((guess, index) => {
+            return <span key={index} className="guess-letter">{guess}</span>
           })}
         </Row>
       )}
@@ -132,6 +165,19 @@ const Board = styled.div`
 `;
 
 const Row = styled.div`
+  .guess-letter {
+    font-size: 28px;
+    text-transform: uppercase;
+    box-sizing: border-box;
+    vertical-align: middle;
+    justify-content: center;
+    align-items: center;
+    margin: 5px;
+  }
+`;
+
+const RedArrow = styled.span`
+  color: red;
 `;
 
 const Win = styled.div`
@@ -139,6 +185,16 @@ const Win = styled.div`
   font-weight: 700;
   font-size: 36px;
   letter-spacing: 0.2rem;
+`;
+
+const StatusRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width:75%;
+  .content {
+    width: 75%;
+  }
 `;
 
 export default GameBody;
