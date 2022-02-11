@@ -1,10 +1,14 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import React from 'react';
 import { useState } from 'react';
 import { solutions, validGuesses } from '../solutions';
 import useKeypress from 'react-use-keypress';
 
 const GameBody = () => {
+  const startingKeyState = {
+    a: 0, b: 0, c: 0, d: 0, e: 0, f: 0, g: 0, h: 0, i: 0, j: 0, k: 0, l: 0, m: 0, n: 0,
+    o: 0, p: 0, q: 0, r: 0, s: 0, t: 0, u: 0, v: 0, w: 0, x: 0, y: 0, z: 0
+  };
   const [currentSolutionIndex, setCurrentSolutionIndex] = useState(0);
   const [solution, setSolution] = useState(solutions[0]);
   const [previousRows, setPreviousRows] = useState([]);
@@ -13,6 +17,8 @@ const GameBody = () => {
   const [win, setWin] = useState(false);
   const [status, setStatus] = useState('Playing game #1');
   const [hasError, setHasError] = useState(false);
+  const [resetKeybOnChange, setResetKeybOnChange] = useState(true);
+  const [keysToggle, setKeysToggle] = useState(startingKeyState);
 
   const handleKey = (event) => {
     if (event.key === "Enter") {
@@ -98,8 +104,11 @@ const GameBody = () => {
     setPreviousRowResults([]);
     setCurrentGuess([]);
     setStatus(`Playing game #${newIndex+1}`);
+    if (resetKeybOnChange) {
+      setKeysToggle(startingKeyState);
+    }
     setWin(false);
-  }
+  };
 
   const goBack = () => {
     const newIndex = currentSolutionIndex - 1;
@@ -109,47 +118,89 @@ const GameBody = () => {
     setPreviousRowResults([]);
     setCurrentGuess([]);
     setStatus(`Playing game #${newIndex+1}`);
+    if (resetKeybOnChange) {
+      setKeysToggle(startingKeyState);
+    }
     setWin(false);
-  }
+  };
 
   const getPointer = () => {
     if (hasError) {
-      return <RedArrow>{'->'}</RedArrow>
+      return <Red>{'->'}</Red>
     } else {
       return '->';
     }
-  }
+  };
+
+  const getStatus = () => {
+    if (hasError) {
+      return <Red>{status}</Red>
+    } else {
+      return status;
+    }
+  };
+
+  const toggleKey = (key) => {
+    let newValue = 0;
+    if (keysToggle[key] == 0) {
+      newValue = 1;
+    }
+    setKeysToggle(prevState => ({...prevState, [key]: newValue}));
+  };
+
+  const getKeyboard = () => {
+    return Object.keys(keysToggle).map((key, index) => {
+      return (
+        index == 6 || index == 12 || index == 18
+          ? <span key={index}><KeyToggle key={index} selected={keysToggle[key] == 1} onClick={() => toggleKey(key)}>{key}</KeyToggle><br /></span>
+          : <KeyToggle key={index} selected={keysToggle[key] == 1} onClick={() => toggleKey(key)}>{key}</KeyToggle>
+      );
+    });
+  };
 
   return (
     <Board>
       <p>Instructions: type your letters, press enter to guess. First number is correct letters in place, second number is correct letters wrong place.</p>
-      <StatusRow>Status: <textarea className='content' rows={1} value={status} disabled={true}></textarea></StatusRow>
-      <div><button onClick={goBack} disabled={currentSolutionIndex < 1}>{'<-'} back</button> Game# {currentSolutionIndex+1} <button onClick={goNext} disabled={currentSolutionIndex === solutions.length-1}>next {'->'}</button></div>
-      {previousRows.map((row, index) => {
-        return (
-          <Row key={index}>{index+1}:{'   '}
-            {row.map((char, index2) => {
-              return <span key={index2} className="guess-letter">{char}</span>
-            })}
-            <span>
-              {'    '}{previousRowResults[index][0]}{' '}{previousRowResults[index][1]}
-            </span>
+      <StatusRow>Status: <span className='content'>{getStatus()}</span></StatusRow>
+      <div className='game-control'><button onClick={goBack} disabled={currentSolutionIndex < 1}>{'<-'} back</button> Game# {currentSolutionIndex+1} <button onClick={goNext} disabled={currentSolutionIndex === solutions.length-1}>next {'->'}</button></div>
+      <BoardSplitter>
+        <LeftSide>
+          <Row>
+            <input type="checkbox" className="checkbox" checked={resetKeybOnChange} onChange={() => setResetKeybOnChange(!resetKeybOnChange)} /> Reset This On Change
           </Row>
-        )
-      })}
-      {!win && (
-        <Row>
-          {getPointer()} {currentGuess.map((guess, index) => {
-            return <span key={index} className="guess-letter">{guess}</span>
+          <Row>
+            {getKeyboard()}
+          </Row>
+        </LeftSide>
+
+        <RightSide>
+          {previousRows.map((row, index) => {
+            return (
+              <Row key={index}>{index+1}:{'   '}
+                {row.map((char, index2) => {
+                  return <span key={index2} className="guess-letter">{char}</span>
+                })}
+                <span>
+                  {'    '}{previousRowResults[index][0]}{' '}{previousRowResults[index][1]}
+                </span>
+              </Row>
+            )
           })}
-        </Row>
-      )}
-      {win && (
-        <div>
-          <Win>You Win!!!</Win>
-          <button onClick={goNext}>Next Game</button>
-        </div>
-      )}
+          {!win && (
+            <Row>
+              {getPointer()} {currentGuess.map((guess, index) => {
+                return <span key={index} className="guess-letter">{guess}</span>
+              })}
+            </Row>
+          )}
+          {win && (
+            <div>
+              <Win>You Win!!!</Win>
+              <button onClick={goNext}>Next Game</button>
+            </div>
+          )}
+        </RightSide>
+      </BoardSplitter>
     </Board>
   );
 };
@@ -162,6 +213,10 @@ const Board = styled.div`
   flex-grow: 1;
   overflow: hidden;
   height: 100vh;
+
+  .game-control {
+    margin: 10px;
+  }
 `;
 
 const Row = styled.div`
@@ -174,9 +229,45 @@ const Row = styled.div`
     align-items: center;
     margin: 5px;
   }
+  .checkbox {
+    margin-bottom: 20px;
+  }
 `;
 
-const RedArrow = styled.span`
+const BoardSplitter = styled.div`
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 50%;
+`;
+
+const LeftSide = styled.div`
+`;
+
+const RightSide = styled.div`
+`;
+
+const KeyToggle = styled.span`
+  display: inline-block;
+  font-size: 20px;
+  text-transform: uppercase;
+  vertical-align: middle;
+  justify-content: center;
+  text-align: center;
+  margin: 6px;
+  width: 22px;
+  border: 1px solid gray;
+  cursor: pointer;
+
+  ${props =>
+    props.selected &&
+    css`
+      background: gray;
+    `};
+`;
+
+const Red = styled.span`
   color: red;
 `;
 
@@ -191,8 +282,9 @@ const StatusRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  width:75%;
+  width: 75%;
   .content {
+    margin-left: 20px;
     width: 75%;
   }
 `;
