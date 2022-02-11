@@ -17,7 +17,6 @@ const GameBody = () => {
   const [win, setWin] = useState(false);
   const [status, setStatus] = useState('Playing game #1');
   const [hasError, setHasError] = useState(false);
-  const [resetKeybOnChange, setResetKeybOnChange] = useState(true);
   const [keysToggle, setKeysToggle] = useState(startingKeyState);
 
   const handleKey = (event) => {
@@ -104,9 +103,7 @@ const GameBody = () => {
     setPreviousRowResults([]);
     setCurrentGuess([]);
     setStatus(`Playing game #${newIndex+1}`);
-    if (resetKeybOnChange) {
-      setKeysToggle(startingKeyState);
-    }
+    setKeysToggle(startingKeyState);
     setWin(false);
   };
 
@@ -118,9 +115,7 @@ const GameBody = () => {
     setPreviousRowResults([]);
     setCurrentGuess([]);
     setStatus(`Playing game #${newIndex+1}`);
-    if (resetKeybOnChange) {
-      setKeysToggle(startingKeyState);
-    }
+    setKeysToggle(startingKeyState);
     setWin(false);
   };
 
@@ -165,9 +160,6 @@ const GameBody = () => {
       <div className='game-control'><button onClick={goBack} disabled={currentSolutionIndex < 1}>{'<-'} back</button> Game# {currentSolutionIndex+1} <button onClick={goNext} disabled={currentSolutionIndex === solutions.length-1}>next {'->'}</button></div>
       <BoardSplitter>
         <LeftSide>
-          <Row>
-            <input type="checkbox" className="checkbox" checked={resetKeybOnChange} onChange={() => setResetKeybOnChange(!resetKeybOnChange)} /> Reset This On Change
-          </Row>
           <Row>
             {getKeyboard()}
           </Row>
@@ -221,13 +213,15 @@ const Board = styled.div`
 
 const Row = styled.div`
   .guess-letter {
+    display: inline-block;
     font-size: 28px;
     text-transform: uppercase;
     box-sizing: border-box;
     vertical-align: middle;
     justify-content: center;
     align-items: center;
-    margin: 5px;
+    width: 22px;
+    margin: 6px;
   }
   .checkbox {
     margin-bottom: 20px;
