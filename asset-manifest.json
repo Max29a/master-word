@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/master-word/static/js/main.ab0deb64.js",
+    "main.js": "/master-word/static/js/main.69e0e273.js",
     "index.html": "/master-word/index.html",
-    "main.ab0deb64.js.map": "/master-word/static/js/main.ab0deb64.js.map"
+    "main.69e0e273.js.map": "/master-word/static/js/main.69e0e273.js.map"
   },
   "entrypoints": [
-    "static/js/main.ab0deb64.js"
+    "static/js/main.69e0e273.js"
   ]
 }
