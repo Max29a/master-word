@@ -1,8 +1,10 @@
 import styled, { css } from 'styled-components';
 import React from 'react';
 import { useState } from 'react';
-import { solutions, validGuesses } from '../solutions';
+import { fourLetterWords, fourLetterValidGuesses} from '../solutions';
 import useKeypress from 'react-use-keypress';
+
+const NUM_LETTERS = 4;
 
 const GameBody = () => {
   const startingKeyState = {
@@ -10,7 +12,7 @@ const GameBody = () => {
     o: 0, p: 0, q: 0, r: 0, s: 0, t: 0, u: 0, v: 0, w: 0, x: 0, y: 0, z: 0
   };
   const [currentSolutionIndex, setCurrentSolutionIndex] = useState(0);
-  const [solution, setSolution] = useState(solutions[0]);
+  const [solution, setSolution] = useState(fourLetterWords[0]);
   const [previousRows, setPreviousRows] = useState([]);
   const [previousRowResults, setPreviousRowResults] = useState([]);
   const [currentGuess, setCurrentGuess] = useState([]);
@@ -21,16 +23,16 @@ const GameBody = () => {
 
   const handleKey = (event) => {
     if (event.key === "Enter") {
-      if (currentGuess.length === 5) {
+      if (currentGuess.length === NUM_LETTERS) {
         const curGuess = currentGuess.join('');
-        if (!solutions.includes(curGuess) && !validGuesses.includes(curGuess)) {
+        if (!fourLetterWords.includes(curGuess) && !fourLetterValidGuesses.includes(curGuess.toUpperCase())) {
           setStatus('Not a valid word to guess');
           setHasError(true);
           return;
         }
 
         if (curGuess === solution) {
-          setPreviousRowResults([...previousRowResults, [5,0]]);
+          setPreviousRowResults([...previousRowResults, [NUM_LETTERS,0]]);
           setStatus(`You won game ${currentSolutionIndex+1}`);
           setWin(true);
         } else {
@@ -84,7 +86,7 @@ const GameBody = () => {
         setCurrentGuess(newCur);
       }
     } else {
-      if (currentGuess.length < 5) {
+      if (currentGuess.length < NUM_LETTERS) {
         setCurrentGuess([...currentGuess, event.key]);
       }
     }
@@ -98,7 +100,7 @@ const GameBody = () => {
   const goNext = () => {
     const newIndex = currentSolutionIndex + 1;
     setCurrentSolutionIndex(newIndex);
-    setSolution(solutions[newIndex]);
+    setSolution(fourLetterWords[newIndex]);
     setPreviousRows([]);
     setPreviousRowResults([]);
     setCurrentGuess([]);
@@ -110,7 +112,7 @@ const GameBody = () => {
   const goBack = () => {
     const newIndex = currentSolutionIndex - 1;
     setCurrentSolutionIndex(newIndex);
-    setSolution(solutions[newIndex]);
+    setSolution(fourLetterWords[newIndex]);
     setPreviousRows([]);
     setPreviousRowResults([]);
     setCurrentGuess([]);
@@ -137,18 +139,35 @@ const GameBody = () => {
 
   const toggleKey = (key) => {
     let newValue = 0;
-    if (keysToggle[key] == 0) {
-      newValue = 1;
+    switch (keysToggle[key]) {
+      case 0:
+        newValue = 1;
+        break;
+      case 1:
+        newValue = 2;
+        break;
+      case 2:
+        newValue = 0;
+        break;
     }
     setKeysToggle(prevState => ({...prevState, [key]: newValue}));
   };
 
   const getKeyboard = () => {
     return Object.keys(keysToggle).map((key, index) => {
+      let color = "white";
+      switch (keysToggle[key]) {
+        case 1:
+          color = "#bda747";
+          break;
+        case 2:
+          color = "#32e361";
+          break;
+      }
       return (
         index == 6 || index == 12 || index == 18
-          ? <span key={index}><KeyToggle key={index} selected={keysToggle[key] == 1} onClick={() => toggleKey(key)}>{key}</KeyToggle><br /></span>
-          : <KeyToggle key={index} selected={keysToggle[key] == 1} onClick={() => toggleKey(key)}>{key}</KeyToggle>
+          ? <span key={index}><KeyToggle key={index} color={color} onClick={() => toggleKey(key)}>{key}</KeyToggle><br /></span>
+          : <KeyToggle key={index} color={color} onClick={() => toggleKey(key)}>{key}</KeyToggle>
       );
     });
   };
@@ -157,7 +176,7 @@ const GameBody = () => {
     <Board>
       <p>Instructions: type your letters, press enter to guess. First number is correct letters in place, second number is correct letters wrong place.</p>
       <StatusRow>Status: <span className='content'>{getStatus()}</span></StatusRow>
-      <div className='game-control'><button onClick={goBack} disabled={currentSolutionIndex < 1}>{'<-'} back</button> Game# {currentSolutionIndex+1} <button onClick={goNext} disabled={currentSolutionIndex === solutions.length-1}>next {'->'}</button></div>
+      <div className='game-control'><button onClick={goBack} disabled={currentSolutionIndex < 1}>{'<-'} back</button> Game# {currentSolutionIndex+1} <button onClick={goNext} disabled={currentSolutionIndex === fourLetterWords.length-1}>next {'->'}</button></div>
       <BoardSplitter>
         <LeftSide>
           <Row>
@@ -255,9 +274,8 @@ const KeyToggle = styled.span`
   cursor: pointer;
 
   ${props =>
-    props.selected &&
     css`
-      background: gray;
+      background: ${props.color};
     `};
 `;
 
