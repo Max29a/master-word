@@ -1,6 +1,6 @@
 import styled, { css } from 'styled-components';
 import React from 'react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { fourLetterWords, fourLetterValidGuesses} from '../solutions';
 import useKeypress from 'react-use-keypress';
 
@@ -20,6 +20,11 @@ const GameBody = () => {
   const [status, setStatus] = useState('Playing game #1');
   const [hasError, setHasError] = useState(false);
   const [keysToggle, setKeysToggle] = useState(startingKeyState);
+  const guessesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    guessesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  };
 
   const handleKey = (event) => {
     if (event.key === "Enter") {
@@ -90,6 +95,7 @@ const GameBody = () => {
         setCurrentGuess([...currentGuess, event.key]);
       }
     }
+    scrollToBottom();
   };
 
   useKeypress(
@@ -202,6 +208,7 @@ const GameBody = () => {
               {getPointer()} {currentGuess.map((guess, index) => {
                 return <span key={index} className="guess-letter">{guess}</span>
               })}
+              <div ref={guessesEndRef} />
             </Row>
           )}
           {win && (
@@ -256,9 +263,13 @@ const BoardSplitter = styled.div`
 `;
 
 const LeftSide = styled.div`
+  align-self: flex-start;
 `;
 
 const RightSide = styled.div`
+  overflow-y: scroll;
+  height: 70vh;
+  width: 40%;
 `;
 
 const KeyToggle = styled.span`
