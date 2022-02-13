@@ -3,8 +3,13 @@ import React from 'react';
 import { useState, useRef } from 'react';
 import { fourLetterWords, fourLetterValidGuesses} from '../solutions';
 import useKeypress from 'react-use-keypress';
+import Switch from "react-switch";
 
 const NUM_LETTERS = 4;
+const DEFINITELY_IN = "#22a318";
+const DEFINITELY_OUT = "#e32b2b";
+const GUESSING_IN = "#e0ffde";
+const GUESSING_OUT = "#ffdede";
 
 const GameBody = () => {
   const startingKeyState = {
@@ -20,6 +25,7 @@ const GameBody = () => {
   const [status, setStatus] = useState('Playing game #1');
   const [hasError, setHasError] = useState(false);
   const [keysToggle, setKeysToggle] = useState(startingKeyState);
+  const [markSure, setMarkSure] = useState(false);
   const guessesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -145,48 +151,94 @@ const GameBody = () => {
 
   const toggleKey = (key) => {
     let newValue = 0;
-    switch (keysToggle[key]) {
-      case 0:
-        newValue = 1;
-        break;
-      case 1:
-        newValue = 2;
-        break;
-      case 2:
-        newValue = 0;
-        break;
+    if (markSure) {
+      switch (keysToggle[key]) {
+        case 0:
+          newValue = 3;
+          break;
+        case 3:
+          newValue = 4;
+          break;
+        case 4:
+          newValue = 0;
+          break;
+      }
+    }
+    else {
+      switch (keysToggle[key]) {
+        case 0:
+          newValue = 1;
+          break;
+        case 1:
+          newValue = 2;
+          break;
+        case 2:
+          newValue = 0;
+          break;
+      }
     }
     setKeysToggle(prevState => ({...prevState, [key]: newValue}));
   };
 
   const getKeyboard = () => {
     return Object.keys(keysToggle).map((key, index) => {
-      let color = "white";
+      let color = "#ffffff";
       switch (keysToggle[key]) {
         case 1:
-          color = "#bda747";
+          color = GUESSING_OUT;
           break;
         case 2:
-          color = "#32e361";
+          color = GUESSING_IN;
+          break;
+        case 3:
+          color = DEFINITELY_OUT;
+          break;
+        case 4:
+          color = DEFINITELY_IN;
           break;
       }
       return (
-        index == 6 || index == 12 || index == 18
+        index === 5 || index === 11 || index === 17 || index === 23
           ? <span key={index}><KeyToggle key={index} color={color} onClick={() => toggleKey(key)}>{key}</KeyToggle><br /></span>
           : <KeyToggle key={index} color={color} onClick={() => toggleKey(key)}>{key}</KeyToggle>
       );
     });
   };
 
+  const clearMarkedGuesses = () => {
+    Object.keys(keysToggle).forEach(key => {
+      if (keysToggle[key] === 1 || keysToggle[key] === 2) {
+        keysToggle[key] = 0;
+      }
+    });
+    setKeysToggle({...keysToggle});
+  };
+
   return (
     <Board>
-      <p>Instructions: type your letters, press enter to guess. First number is correct letters in place, second number is correct letters wrong place.</p>
+      <p>
+        Instructions: type your letters, press enter to guess.
+        First number is correct letters in the correct place, second number is correct letters but wrong place.
+        You can use the alphabet to keep track of letters you think are in/out by clicking them.
+      </p>
       <StatusRow>Status: <span className='content'>{getStatus()}</span></StatusRow>
       <div className='game-control'><button onClick={goBack} disabled={currentSolutionIndex < 1}>{'<-'} back</button> Game# {currentSolutionIndex+1} <button onClick={goNext} disabled={currentSolutionIndex === fourLetterWords.length-1}>next {'->'}</button></div>
       <BoardSplitter>
         <LeftSide>
           <Row>
+            <CenteredRow>
+              <div style={{marginRight: 6}}>Mark Guess</div>
+              <Switch onChange={() => {setMarkSure(!markSure)}}
+                checked={markSure}
+                uncheckedIcon={false}
+                checkedIcon={false}
+                offColor="#7a7a7a"
+                onColor="#7a7a7a"
+                />
+              <div style={{marginLeft: 6}}>Mark Sure</div>
+            </CenteredRow>
             {getKeyboard()}
+            <button onClick={clearMarkedGuesses}>Clear Marked Guesses</button>
           </Row>
         </LeftSide>
 
@@ -264,6 +316,17 @@ const BoardSplitter = styled.div`
 
 const LeftSide = styled.div`
   align-self: flex-start;
+`;
+
+const toggleStyle = css`
+  margin: 0px 8px;
+`;
+
+const CenteredRow = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
 `;
 
 const RightSide = styled.div`
