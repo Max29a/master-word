@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { fourLetterWords, fourLetterValidGuesses} from '../solutions';
 import useKeypress from 'react-use-keypress';
 import Switch from "react-switch";
+import { useAlert } from 'react-alert'
 
 const NUM_LETTERS = 4;
 const DEFINITELY_IN = "#22a318";
@@ -22,14 +23,14 @@ const GameBody = () => {
   const [previousRowResults, setPreviousRowResults] = useState([]);
   const [currentGuess, setCurrentGuess] = useState([]);
   const [win, setWin] = useState(false);
-  const [status, setStatus] = useState('Playing game #1');
   const [hasError, setHasError] = useState(false);
   const [keysToggle, setKeysToggle] = useState(startingKeyState);
   const [markSure, setMarkSure] = useState(false);
   const guessesEndRef = useRef(null);
+  const alert = useAlert();
 
   const scrollToBottom = () => {
-    guessesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    guessesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   };
 
   const handleKey = (event) => {
@@ -37,14 +38,14 @@ const GameBody = () => {
       if (currentGuess.length === NUM_LETTERS) {
         const curGuess = currentGuess.join('');
         if (!fourLetterWords.includes(curGuess) && !fourLetterValidGuesses.includes(curGuess.toUpperCase())) {
-          setStatus('Not a valid word to guess');
+          alert.show('Not a valid word to guess');
           setHasError(true);
           return;
         }
 
         if (curGuess === solution) {
           setPreviousRowResults([...previousRowResults, [NUM_LETTERS,0]]);
-          setStatus(`You won game ${currentSolutionIndex+1}`);
+          alert.show(`You won game ${currentSolutionIndex+1}`);
           setWin(true);
         } else {
           let countRightLetter = 0;
@@ -67,7 +68,7 @@ const GameBody = () => {
               guessCopy.splice(i, 1);
               if (correctLetters.hasOwnProperty(curLetter)) {
                 correctLetters[curLetter] = correctLetters[curLetter] - 1;
-                if (correctLetters[curLetter] == 0) {
+                if (correctLetters[curLetter] === 0) {
                   delete correctLetters[curLetter];
                 }
               }
@@ -78,12 +79,11 @@ const GameBody = () => {
             if (correctLetters.hasOwnProperty(curLetter)) {
               countRightLetter++;
               correctLetters[curLetter] = correctLetters[curLetter] - 1;
-              if (correctLetters[curLetter] == 0) {
+              if (correctLetters[curLetter] === 0) {
                 delete correctLetters[curLetter];
               }
             }
-          }
-          
+          }         
           setPreviousRowResults([...previousRowResults, [countRightPosition, countRightLetter]]);
         }
         setPreviousRows([...previousRows, currentGuess]);
@@ -92,16 +92,15 @@ const GameBody = () => {
     } else if (event.key === "Backspace") {
       if (currentGuess.length > 0) {
         setHasError(false);
-        setStatus('');
         const newCur = currentGuess.slice(0,-1);
         setCurrentGuess(newCur);
       }
     } else {
       if (currentGuess.length < NUM_LETTERS) {
         setCurrentGuess([...currentGuess, event.key]);
+        scrollToBottom();
       }
     }
-    scrollToBottom();
   };
 
   useKeypress(
@@ -109,73 +108,45 @@ const GameBody = () => {
     handleKey
   );
 
-  const goNext = () => {
-    const newIndex = currentSolutionIndex + 1;
+  const changeGame = (newIndex) => {
     setCurrentSolutionIndex(newIndex);
     setSolution(fourLetterWords[newIndex]);
     setPreviousRows([]);
     setPreviousRowResults([]);
     setCurrentGuess([]);
-    setStatus(`Playing game #${newIndex+1}`);
     setKeysToggle(startingKeyState);
     setWin(false);
+  };
+
+  const goNext = () => {
+    changeGame(currentSolutionIndex + 1);
   };
 
   const goBack = () => {
-    const newIndex = currentSolutionIndex - 1;
-    setCurrentSolutionIndex(newIndex);
-    setSolution(fourLetterWords[newIndex]);
-    setPreviousRows([]);
-    setPreviousRowResults([]);
-    setCurrentGuess([]);
-    setStatus(`Playing game #${newIndex+1}`);
-    setKeysToggle(startingKeyState);
-    setWin(false);
+    changeGame(currentSolutionIndex - 1);
   };
 
   const getPointer = () => {
-    if (hasError) {
-      return <Red>{'->'}</Red>
-    } else {
-      return '->';
-    }
+    return <Colored color={hasError ? "red" : "black"}>➜</Colored>
   };
 
-  const getStatus = () => {
-    if (hasError) {
-      return <Red>{status}</Red>
-    } else {
-      return status;
-    }
-  };
-
+  // cycle through states for toggled key:
+  // 0 -> 1 || 3, 1 -> 2, 2 -> 0, 3 -> 4, 
   const toggleKey = (key) => {
-    let newValue = 0;
-    if (markSure) {
-      switch (keysToggle[key]) {
-        case 0:
-          newValue = 3;
-          break;
-        case 3:
-          newValue = 4;
-          break;
-        case 4:
-          newValue = 0;
-          break;
-      }
-    }
-    else {
-      switch (keysToggle[key]) {
-        case 0:
-          newValue = 1;
-          break;
-        case 1:
-          newValue = 2;
-          break;
-        case 2:
-          newValue = 0;
-          break;
-      }
+    let newValue;
+    switch (keysToggle[key]) {
+      case 0:
+        markSure ? newValue = 3 : newValue = 1;
+        break;
+      case 1:
+        newValue = 2;
+        break;
+      case 3:
+        newValue = 4;
+        break;
+      default:
+        newValue = 0;
+        break;
     }
     setKeysToggle(prevState => ({...prevState, [key]: newValue}));
   };
@@ -216,13 +187,15 @@ const GameBody = () => {
 
   return (
     <Board>
-      <p>
-        Instructions: type your letters, press enter to guess.
-        First number is correct letters in the correct place, second number is correct letters but wrong place.
-        You can use the alphabet to keep track of letters you think are in/out by clicking them.
-      </p>
-      <StatusRow>Status: <span className='content'>{getStatus()}</span></StatusRow>
-      <div className='game-control'><button onClick={goBack} disabled={currentSolutionIndex < 1}>{'<-'} back</button> Game# {currentSolutionIndex+1} <button onClick={goNext} disabled={currentSolutionIndex === fourLetterWords.length-1}>next {'->'}</button></div>
+      <div className='game-control'>
+        <button onClick={goBack} disabled={currentSolutionIndex < 1}>
+          ◀ back
+        </button>
+        <GameSpan>Game# {currentSolutionIndex+1}</GameSpan>
+        <button onClick={goNext} disabled={currentSolutionIndex === fourLetterWords.length-1}>
+            next ▶
+        </button>
+      </div>
       <BoardSplitter>
         <LeftSide>
           <Row>
@@ -245,14 +218,15 @@ const GameBody = () => {
         <RightSide>
           {previousRows.map((row, index) => {
             return (
-              <Row key={index}>{index+1}:{'   '}
+              <CenteredRow key={index}>{index+1}:{' '}
                 {row.map((char, index2) => {
                   return <span key={index2} className="guess-letter">{char}</span>
                 })}
                 <span>
-                  {'    '}{previousRowResults[index][0]}{' '}{previousRowResults[index][1]}
+                  <Colored color="#7da2ff">{previousRowResults[index][0]}</Colored>{' '}
+                  <Colored color="#f59eff">{previousRowResults[index][1]}</Colored>
                 </span>
-              </Row>
+              </CenteredRow>
             )
           })}
           {!win && (
@@ -265,7 +239,6 @@ const GameBody = () => {
           )}
           {win && (
             <div>
-              <Win>You Win!!!</Win>
               <button onClick={goNext}>Next Game</button>
             </div>
           )}
@@ -283,10 +256,15 @@ const Board = styled.div`
   flex-grow: 1;
   overflow: hidden;
   height: 100vh;
+  width: 100vw;
 
   .game-control {
-    margin: 10px;
+    margin: 20px;
   }
+`;
+
+const GameSpan = styled.span`
+  margin: 0px 10px;
 `;
 
 const Row = styled.div`
@@ -300,9 +278,6 @@ const Row = styled.div`
     align-items: center;
     width: 22px;
     margin: 6px;
-  }
-  .checkbox {
-    margin-bottom: 20px;
   }
 `;
 
@@ -318,21 +293,33 @@ const LeftSide = styled.div`
   align-self: flex-start;
 `;
 
-const toggleStyle = css`
-  margin: 0px 8px;
-`;
-
 const CenteredRow = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
+
+  .guess-letter {
+    display: inline-block;
+    font-size: 28px;
+    text-transform: uppercase;
+    box-sizing: border-box;
+    vertical-align: middle;
+    justify-content: center;
+    align-items: center;
+    width: 22px;
+    margin: 6px;
+  }
+
 `;
 
 const RightSide = styled.div`
   overflow-y: scroll;
-  height: 70vh;
-  width: 40%;
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  align-item: flex-start;
+  max-height: 50vh;
 `;
 
 const KeyToggle = styled.span`
@@ -345,6 +332,7 @@ const KeyToggle = styled.span`
   margin: 6px;
   width: 22px;
   border: 1px solid gray;
+  user-select: none;
   cursor: pointer;
 
   ${props =>
@@ -353,26 +341,11 @@ const KeyToggle = styled.span`
     `};
 `;
 
-const Red = styled.span`
-  color: red;
-`;
-
-const Win = styled.div`
-  color: green;
-  font-weight: 700;
-  font-size: 36px;
-  letter-spacing: 0.2rem;
-`;
-
-const StatusRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 75%;
-  .content {
-    margin-left: 20px;
-    width: 75%;
-  }
+const Colored = styled.span`
+  ${props =>
+    css`
+      color: ${props.color}
+  `};
 `;
 
 export default GameBody;
