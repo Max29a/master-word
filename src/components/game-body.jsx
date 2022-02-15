@@ -237,11 +237,6 @@ const GameBody = () => {
               <div ref={guessesEndRef} />
             </Row>
           )}
-          {win && (
-            <div>
-              <button onClick={goNext}>Next Game</button>
-            </div>
-          )}
         </RightSide>
       </BoardSplitter>
     </Board>
@@ -320,6 +315,7 @@ const RightSide = styled.div`
   align-self: flex-start;
   align-item: flex-start;
   max-height: 50vh;
+  padding: 0px 15px; 
 `;
 
 const KeyToggle = styled.span`
