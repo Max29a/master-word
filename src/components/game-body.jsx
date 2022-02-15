@@ -151,23 +151,31 @@ const GameBody = () => {
     setKeysToggle(prevState => ({...prevState, [key]: newValue}));
   };
 
+  const getColorForKey = (index) => {
+    let color;
+    switch (keysToggle[index]) {
+      case 1:
+        color = GUESSING_OUT;
+        break;
+      case 2:
+        color = GUESSING_IN;
+        break;
+      case 3:
+        color = DEFINITELY_OUT;
+        break;
+      case 4:
+        color = DEFINITELY_IN;
+        break;
+      default:
+        color = "#FFFFFF";
+        break;
+    }
+    return color;
+  };
+
   const getKeyboard = () => {
     return Object.keys(keysToggle).map((key, index) => {
-      let color = "#ffffff";
-      switch (keysToggle[key]) {
-        case 1:
-          color = GUESSING_OUT;
-          break;
-        case 2:
-          color = GUESSING_IN;
-          break;
-        case 3:
-          color = DEFINITELY_OUT;
-          break;
-        case 4:
-          color = DEFINITELY_IN;
-          break;
-      }
+      const color = getColorForKey(key);
       return (
         index === 5 || index === 11 || index === 17 || index === 23
           ? <span key={index}><KeyToggle key={index} color={color} onClick={() => toggleKey(key)}>{key}</KeyToggle><br /></span>

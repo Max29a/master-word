@@ -6,8 +6,8 @@ const GameHeader = () => {
     <>
       <HeaderDiv>Master Word</HeaderDiv>
       <InstructionsDiv>
-        Instructions: type your letters, press enter to guess.
-        First number is correct letters in the correct place, second number is correct letters but wrong place.
+        Instructions: Type your letters, press enter to guess.
+        <span style={{color: "#7da2ff"}}> First number</span> is correct letters in the correct place, <span style={{color: "#f59eff"}}>second number</span> is correct letters but wrong place.
         You can use the alphabet to keep track of letters you think are in/out by clicking them.
       </InstructionsDiv>
     </>
